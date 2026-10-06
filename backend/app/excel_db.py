@@ -4,41 +4,54 @@ from datetime import datetime
 import uuid
 import io
 from .questions import QUESTIONS_META
-import pymongo
+from supabase import create_client, Client
 
-MONGO_URI = os.getenv("MONGODB_URI")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-client = pymongo.MongoClient(MONGO_URI) if MONGO_URI else None
-db = client.get_database("vos_survey") if client else None
-collection = db.get_collection("responses") if db else None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+else:
+    supabase = None
 
 Q_KEYS = [f"Q{i}" for i in range(1, 37)]
 
 def append_response(answers: dict):
-    if collection is None: 
-        print("Warning: MONGODB_URI not set. Data not saved.")
+    if not supabase: 
+        print("Warning: Supabase credentials not set. Data not saved.")
         return
         
-    row = {
-        "Timestamp": datetime.now().isoformat(),
-        "Response ID": str(uuid.uuid4())
-    }
-    
+    flat_answers = {}
     for q in Q_KEYS:
         col_name = f"{q}. {QUESTIONS_META.get(q, '')}" if q in QUESTIONS_META else q
         ans = answers.get(q)
         if isinstance(ans, list):
-            row[col_name] = "; ".join(map(str, ans))
+            flat_answers[col_name] = "; ".join(map(str, ans))
         elif ans is not None:
-            row[col_name] = ans
+            flat_answers[col_name] = ans
 
-    collection.insert_one(row)
+    data = {
+        "id": str(uuid.uuid4()),
+        "created_at": datetime.now().isoformat(),
+        "answers": flat_answers
+    }
+    supabase.table("responses").insert(data).execute()
 
 def get_all_responses():
-    if collection is None: 
+    if not supabase: 
         return []
-    cursor = collection.find({}, {"_id": 0})
-    return list(cursor)
+    response = supabase.table("responses").select("*").execute()
+    
+    flattened = []
+    for row in response.data:
+        flat_row = {
+            "Timestamp": row.get("created_at"),
+            "Response ID": row.get("id")
+        }
+        flat_row.update(row.get("answers", {}))
+        flattened.append(flat_row)
+        
+    return flattened
 
 def generate_excel_bytes():
     responses = get_all_responses()

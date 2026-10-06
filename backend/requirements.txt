@@ -10,4 +10,4 @@ filelock
 pandas
 openpyxl
 a2wsgi
-pymongo
+supabase
