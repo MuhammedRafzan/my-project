@@ -1,12 +1,8 @@
-from app.excel_db import append_response, init_db
+from app.excel_db import append_response
 import random
 import os
 
-if not os.path.exists("../data"):
-    os.makedirs("../data")
-
 def seed_data():
-    init_db()
     categories = ["Student", "Job Seeker / Recent Graduate", "HR Professional / Recruiter", "Academic Administrator / Faculty", "Other"]
     for i in range(20):
         ans = {

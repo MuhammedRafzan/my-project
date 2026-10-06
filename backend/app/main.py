@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from .models import SurveyResponse, LoginRequest
-from .excel_db import append_response, get_all_responses, generate_summary, EXCEL_FILE
+from .excel_db import append_response, get_all_responses, generate_summary_bytes, generate_excel_bytes
 from .auth import verify_password, get_password_hash, create_access_token, decode_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 import os
 from datetime import timedelta
@@ -65,13 +65,14 @@ def admin_responses():
 
 @app.get("/api/admin/download", dependencies=[Depends(verify_token)])
 def admin_download():
-    if os.path.exists(EXCEL_FILE):
-        return FileResponse(EXCEL_FILE, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename="responses.xlsx")
+    excel_bytes = generate_excel_bytes()
+    if excel_bytes:
+        return Response(content=excel_bytes, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={'Content-Disposition': 'attachment; filename="responses.xlsx"'})
     raise HTTPException(status_code=404, detail="No data found")
 
 @app.get("/api/admin/download-summary", dependencies=[Depends(verify_token)])
 def admin_download_summary():
-    temp_file = generate_summary()
-    if temp_file and os.path.exists(temp_file):
-        return FileResponse(temp_file, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename="summary.xlsx")
+    excel_bytes = generate_summary_bytes()
+    if excel_bytes:
+        return Response(content=excel_bytes, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={'Content-Disposition': 'attachment; filename="summary.xlsx"'})
     raise HTTPException(status_code=404, detail="No data found")
