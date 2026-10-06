@@ -9,3 +9,4 @@ slowapi
 filelock
 pandas
 openpyxl
+a2wsgi

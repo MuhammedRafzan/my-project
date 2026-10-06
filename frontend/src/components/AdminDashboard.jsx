@@ -17,7 +17,7 @@ export default function AdminDashboard() {
     }
     const fetchData = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/admin/responses', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/responses`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.status === 401) {
@@ -44,7 +44,7 @@ export default function AdminDashboard() {
 
   const handleDownload = async (url, filename) => {
     try {
-      const res = await fetch(`http://localhost:8000${url}`, { headers: { 'Authorization': `Bearer ${token}` }});
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${url}`, { headers: { 'Authorization': `Bearer ${token}` }});
       if (!res.ok) { alert("Download failed"); return; }
       const blob = await res.blob();
       const downloadUrl = window.URL.createObjectURL(blob);

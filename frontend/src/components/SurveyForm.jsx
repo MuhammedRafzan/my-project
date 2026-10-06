@@ -60,7 +60,7 @@ export default function SurveyForm() {
     
     setSubmitting(true);
     try {
-      const res = await fetch('http://localhost:8000/api/submit', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ answers, honey_pot: honeyPot })
